@@ -6,7 +6,7 @@ pandas>=2.0
 numpy>=1.25
 
 # Visualization
-matplotlib>=3.8
+matplotlib
 
 # Machine Learning / Explainability (for pipeline integration)
 scikit-learn>=1.5
@@ -16,3 +16,4 @@ shap>=0.45
 # Optional (if causal/fairness modules are used in pipeline)
 dowhy>=0.11
 fairlearn>=0.10
+
