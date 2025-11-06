@@ -25,25 +25,48 @@ def show_png_if_exists(p: Path, caption: str):
         # Older Streamlit fallback
         st.image(str(p), caption=caption)
 
+def _hex(x):  # clamp and convert 0..255 to hex
+    x = int(min(255, max(0, round(x))))
+    return f"{x:02x}"
+
+def _interp_color(v, vmin, vmax, c0=(230,245,255), c1=(0,92,175)):
+    # light blue -> deep blue ramp by rank (lower rank = darker)
+    if vmax <= vmin:
+        t = 0.0
+    else:
+        t = (v - vmin) / (vmax - vmin)
+    # invert so rank 1 is strongest
+    t = 1.0 - t
+    r = (1-t)*c0[0] + t*c1[0]
+    g = (1-t)*c0[1] + t*c1[1]
+    b = (1-t)*c0[2] + t*c1[2]
+    return f"#{_hex(r)}{_hex(g)}{_hex(b)}"
+
 def styled_table(df: pd.DataFrame, gradient_on: str = "rank", seen_col: str = "seen"):
-    """Return HTML for a color-coded table using pandas Styler."""
+    """Return HTML with a custom CSS gradient on `gradient_on` and highlight `seen`—no matplotlib required."""
     sty = df.copy()
-    # Force numeric rank for gradient
-    if gradient_on in sty.columns:
-        try:
-            sty[gradient_on] = pd.to_numeric(sty[gradient_on], errors="coerce")
-        except:
-            pass
-    styler = (
-        sty.style.background_gradient(subset=[c for c in [gradient_on] if c in sty.columns])
-        .set_table_attributes('class="dataframe table table-striped"')
-    )
-    # Light highlight for 'seen' items
+    styler = sty.style.set_table_attributes('class="dataframe table table-striped"')
+
+    if gradient_on in sty.columns and len(sty) > 0:
+        vals = pd.to_numeric(sty[gradient_on], errors="coerce")
+        vmin, vmax = float(np.nanmin(vals)), float(np.nanmax(vals))
+        def _colorize_rank(col):
+            styles = []
+            for v in pd.to_numeric(col, errors="coerce"):
+                if pd.isna(v):
+                    styles.append("")
+                else:
+                    styles.append(f"background-color: {_interp_color(float(v), vmin, vmax)}")
+            return styles
+        styler = styler.apply(_colorize_rank, subset=[gradient_on])
+
     if seen_col in sty.columns:
         def _hi_seen(s):
-            return ['background-color: #ffe9e9' if v else '' for v in s]
+            return ['background-color: #ffe9e9' if bool(v) else '' for v in s]
         styler = styler.apply(_hi_seen, subset=[seen_col])
+
     return styler.to_html()
+
 
 # ---------- Sidebar ----------
 with st.sidebar:
