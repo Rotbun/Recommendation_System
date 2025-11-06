@@ -80,7 +80,7 @@ with st.sidebar:
     keyword = st.text_input("Search by keyword (item_id or text contains)", value="").strip()
     show_raw = st.checkbox("Show raw tables under results", value=False)
 
-st.title("AI-Powered E-commerce Recommendations")
+st.title("AI-Powered E-commerce Recommendations System")
 
 # ---------- Load data ----------
 clean_fp = out_root / "clean.csv"
